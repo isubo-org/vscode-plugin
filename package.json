@@ -1,0 +1,43 @@
+{
+  "name": "isubo-vscode-plugin",
+  "version": "1.0.0",
+  "description": "a vscode plugin for isubo ",
+  "engines": {
+    "vscode": "^1.83.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "index.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "test.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isubo-org/vscode-plugin.git"
+  },
+  "keywords": [
+    "'vscode",
+    "plugin'",
+    "'isubo'"
+  ],
+  "author": "isaaxite",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/isubo-org/vscode-plugin/issues"
+  },
+  "homepage": "https://github.com/isubo-org/vscode-plugin#readme",
+  "dependencies": {
+    "@types/node": "^20.8.8",
+    "@types/vscode": "^1.83.1"
+  }
+}

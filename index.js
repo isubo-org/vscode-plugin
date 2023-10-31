@@ -3,6 +3,10 @@ const path = require('path');
 const vscode = require('vscode');
 const { Isubo } = require('./lib/isubo');
 
+const store = {
+  isLoading: false,
+};
+
 function getIsuboCoreIns(confPath) {
   const isuboCore = new Isubo({
     confPath,
@@ -51,43 +55,27 @@ function findConfFile(postdir, cnt = 0) {
 }
 
 function activate(context) {
-  const registerCmd = registerDeployCmdFactory(context);
-
-  registerCmd('create', async (selectedFile) => {
-    const cwd = process.cwd();
-    let repoCwd = cwd;
-    const postpath = selectedFile.path;
-
-    // filter non-md file
-    const confPath = findConfFile(path.parse(postpath).dir);
-
-    if (!confPath) {
-      vscode.window.showInformationMessage('Without conf file');
+  const registerCmdPure = registerDeployCmdFactory(context);
+  const registerCmd = (deployType, cb) => registerCmdPure(deployType, async (...argv) => {
+    if (store.isLoading) {
+      vscode.window.showWarningMessage('There are already posts being pushed');
       return;
     }
-
-    repoCwd = path.parse(confPath).dir;
-    process.chdir(repoCwd);
+    store.isLoading = true;
     try {
-      const isuboCore = getIsuboCoreIns(confPath);
-      const ret = await isuboCore.create({
-        filepathArr: [postpath],
-      }); 
-    } catch (error) {
-      
-    }
-    process.chdir(cwd);
-    console.info(ret);
-    vscode.window.showInformationMessage(JSON.stringify({postpath, confPath}, null, 2));
+      await cb(...argv);
+    } catch (error) {}
+    store.isLoading = false;
+  });
+
+  registerCmd('create', async ({ postPath, confPath }) => {
+    const isuboCore = getIsuboCoreIns(confPath);
+    await isuboCore.create([postPath]);
   });
 
   registerCmd('update', async ({ postPath, confPath }) => {
-    try {
-      const isuboCore = getIsuboCoreIns(confPath);
-      const ret = await isuboCore.update([postPath]);
-    } catch (error) {
-      
-    }
+    const isuboCore = getIsuboCoreIns(confPath);
+    await isuboCore.update([postPath]);
   });
 
   registerCmd('publish', async () => {

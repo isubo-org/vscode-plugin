@@ -1,22 +1,109 @@
+const fs = require('fs');
+const path = require('path');
 const vscode = require('vscode');
+const { Isubo } = require('./lib/isubo');
+
+function getIsuboCoreIns(confPath) {
+  const isuboCore = new Isubo({
+    confPath,
+  });
+  // isuboCore.updateConf({ push_asset: 'auto' });
+  return isuboCore;
+}
+
+function registerDeployCmdFactory(context) {
+  return (cmd, cb) => {
+    const disposable = vscode.commands.registerCommand(`isubo.${cmd}`, async (selectedFile) => {
+      const cwd = process.cwd();
+      let repoCwd = cwd;
+      const postPath = selectedFile.path;
+
+      // filter non-md file
+      const confPath = findConfFile(path.parse(postPath).dir);
+
+      if (!confPath) {
+        vscode.window.showInformationMessage('Without conf file');
+        return;
+      }
+
+      repoCwd = path.parse(confPath).dir;
+      process.chdir(repoCwd);
+
+      try {
+        await cb({ postPath, confPath }); 
+      } catch (error) { }
+      process.chdir(cwd);
+    });
+    context.subscriptions.push(disposable);
+  };
+}
+
+function findConfFile(postdir, cnt = 0) {
+  if (cnt >= 4) {
+    return '';
+  }
+
+  const confpath = path.join(postdir, 'isubo.conf.yml');
+  if (fs.existsSync(confpath)) {
+    return confpath;
+  }
+  return findConfFile(path.join(postdir, '../'), cnt + 1);
+}
 
 function activate(context) {
+  const registerCmd = registerDeployCmdFactory(context);
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "test" is now active!');
+  registerCmd('create', async (selectedFile) => {
+    const cwd = process.cwd();
+    let repoCwd = cwd;
+    const postpath = selectedFile.path;
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('test.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
+    // filter non-md file
+    const confPath = findConfFile(path.parse(postpath).dir);
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from test!');
-	});
+    if (!confPath) {
+      vscode.window.showInformationMessage('Without conf file');
+      return;
+    }
 
-	context.subscriptions.push(disposable);
+    repoCwd = path.parse(confPath).dir;
+    process.chdir(repoCwd);
+    try {
+      const isuboCore = getIsuboCoreIns(confPath);
+      const ret = await isuboCore.create({
+        filepathArr: [postpath],
+      }); 
+    } catch (error) {
+      
+    }
+    process.chdir(cwd);
+    console.info(ret);
+    vscode.window.showInformationMessage(JSON.stringify({postpath, confPath}, null, 2));
+  });
+
+  registerCmd('update', async ({ postPath, confPath }) => {
+    try {
+      const isuboCore = getIsuboCoreIns(confPath);
+      const ret = await isuboCore.update([postPath]);
+    } catch (error) {
+      
+    }
+  });
+
+  registerCmd('publish', async () => {
+    const enumOpts = {
+      YES: 'yes',
+      NO: 'no',
+    };
+    const options = [enumOpts.YES, enumOpts.NO];
+    // const options = ['Option 1', 'Option 2', 'Option 3'];
+
+    const selectedOption = await vscode.window.showQuickPick(options, {
+      placeHolder: 'Select an option'
+    });
+
+    console.info(selectedOption);
+  });
 }
 
 function deactivate() {}
@@ -24,4 +111,4 @@ function deactivate() {}
 module.exports = {
 	activate,
 	deactivate
-}
+};

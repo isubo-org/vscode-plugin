@@ -13,10 +13,31 @@
   "contributes": {
     "commands": [
       {
-        "command": "test.helloWorld",
-        "title": "Hello World"
+        "command": "isubo.create",
+        "title": "Isubo Create Post"
+      },
+      {
+        "command": "isubo.update",
+        "title": "Isubo Update Post"
+      },
+      {
+        "command": "isubo.publish",
+        "title": "Isubo Publish Post"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "isubo.create"
+        },
+        {
+          "command": "isubo.update"
+        },
+        {
+          "command": "isubo.publish"
+        }
+      ]
+    }
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -38,6 +59,8 @@
   "homepage": "https://github.com/isubo-org/vscode-plugin#readme",
   "dependencies": {
     "@types/node": "^20.8.8",
-    "@types/vscode": "^1.83.1"
+    "@types/vscode": "^1.83.1",
+    "esm": "^3.2.25",
+    "isubo-core": "link:../isubo-core/dist"
   }
 }
